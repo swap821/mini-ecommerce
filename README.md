@@ -1,4 +1,4 @@
-<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/859fb68e-297d-4f16-aff7-bd2bf7c713eb" /># 🛒 Mini E-Commerce Store : https://mini-ecommerce-six-gold.vercel.app
+ 🛒 Mini E-Commerce Store : https://mini-ecommerce-six-gold.vercel.app
 
 
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
