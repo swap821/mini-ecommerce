@@ -19,7 +19,7 @@ function App() {
 
   // Fetch products from the backend database
   useEffect(() => {
-    fetch('/api/products')
+    fetch('https://mini-ecommerce-api-ufss.onrender.com/api/products')
       .then((res) => res.json())
       .then((data) => {
         setProducts(data);
@@ -33,7 +33,7 @@ function App() {
 
   async function handleCheckout() {
     try {
-      const response = await fetch('/api/checkout', {
+      const response = await fetch('https://mini-ecommerce-api-ufss.onrender.com/api/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
