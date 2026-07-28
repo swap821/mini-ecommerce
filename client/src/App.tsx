@@ -1,11 +1,37 @@
 import { useEffect, useState } from 'react';
 import { useCartStore, type Product } from './store/useCartStore';
 
+const SAMPLE_PRODUCTS: Product[] = [
+  {
+    _id: 'sample-1',
+    name: 'Wireless Noise-Canceling Headphones',
+    price: 199.99,
+    description: 'High-fidelity audio with active noise cancellation and 30-hour battery life.',
+    imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80',
+    stock: 10
+  },
+  {
+    _id: 'sample-2',
+    name: 'Mechanical Gaming Keyboard',
+    price: 129.95,
+    description: 'RGB backlit mechanical keyboard with tactile switches and aluminum frame.',
+    imageUrl: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80',
+    stock: 15
+  },
+  {
+    _id: 'sample-3',
+    name: 'Ergonomic Wireless Mouse',
+    price: 69.99,
+    description: 'Precision optical sensor with customizable side buttons and multi-device pairing.',
+    imageUrl: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500&q=80',
+    stock: 20
+  }
+];
+
 function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Grab the global states and actions from Zustand
   const { 
     cart, 
     isCartOpen, 
@@ -17,34 +43,45 @@ function App() {
     getCartCount 
   } = useCartStore();
 
-  // Fetch products from the backend database
+  const apiBase = import.meta.env.VITE_API_URL || 'https://mini-ecommerce-api-ufss.onrender.com';
+
   useEffect(() => {
-    fetch('https://mini-ecommerce-api-ufss.onrender.com/api/products')
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    fetch(`${apiBase}/api/products`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
-        setProducts(data);
+        clearTimeout(timeoutId);
+        if (Array.isArray(data) && data.length > 0) {
+          setProducts(data);
+        } else {
+          setProducts(SAMPLE_PRODUCTS);
+        }
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Failed to fetch products:", err);
+        console.warn("API product fetch failed or timed out, using fallback catalog:", err);
+        setProducts(SAMPLE_PRODUCTS);
         setLoading(false);
       });
-  }, []);
+
+    return () => clearTimeout(timeoutId);
+  }, [apiBase]);
 
   async function handleCheckout() {
     try {
-      const response = await fetch('https://mini-ecommerce-api-ufss.onrender.com/api/checkout', {
+      const response = await fetch(`${apiBase}/api/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ cart }), // Send the Zustand cart to the backend
+        body: JSON.stringify({ cart }),
       });
 
       const data = await response.json();
 
       if (data.url) {
-        // Redirect the user to the secure Stripe hosted checkout page
         window.location.href = data.url;
       }
     } catch (error) {
@@ -55,7 +92,6 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
       
-      {/* Navigation Header */}
       <nav className="sticky top-0 z-40 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-xs">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">DevStore</h1>
         <button 
@@ -69,14 +105,13 @@ function App() {
         </button>
       </nav>
 
-      {/* Main Catalog */}
       <main className="max-w-6xl mx-auto px-6 py-12">
         <h2 className="text-3xl font-bold text-slate-900 mb-8">Our Inventory</h2>
         
         {loading ? (
           <div className="text-center py-12 text-slate-500 text-lg">Loading amazing gear...</div>
         ) : products.length === 0 ? (
-          <div className="text-center py-12 text-slate-500 text-lg">Your store database is empty! Use Postman to add some products.</div>
+          <div className="text-center py-12 text-slate-500 text-lg">No products available at the moment.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             {products.map((product) => (
@@ -105,20 +140,16 @@ function App() {
         )}
       </main>
 
-      {/* Slide-out Cart Sidebar */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs transition-opacity">
-          {/* Transparent backdrop closer */}
           <div className="flex-1" onClick={toggleCart}></div>
           
-          {/* Sidebar panel */}
           <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col p-6 border-l border-slate-200 animate-slide-in">
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
               <h2 className="text-xl font-bold text-slate-900">Your Cart</h2>
               <button onClick={toggleCart} className="text-slate-400 hover:text-slate-600 text-2xl font-semibold cursor-pointer">×</button>
             </div>
 
-            {/* Cart Items List */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
               {cart.length === 0 ? (
                 <div className="text-center py-12 text-slate-400">Your cart is feeling light! Add some gear.</div>
@@ -130,7 +161,6 @@ function App() {
                       <h4 className="font-semibold text-sm text-slate-900 line-clamp-1">{item.name}</h4>
                       <p className="text-xs text-emerald-600 font-medium mt-0.5">${item.price.toFixed(2)}</p>
                       
-                      {/* Quantity Selectors */}
                       <div className="flex items-center gap-2 mt-2">
                         <button 
                           onClick={() => updateQuantity(item._id, item.quantity - 1)}
@@ -148,7 +178,6 @@ function App() {
                       </div>
                     </div>
                     
-                    {/* Remove button */}
                     <button 
                       onClick={() => removeFromCart(item._id)}
                       className="absolute top-2 right-3 text-slate-300 hover:text-rose-500 text-lg cursor-pointer"
@@ -160,7 +189,6 @@ function App() {
               )}
             </div>
 
-            {/* Order Summary & Mock Checkout */}
             <div className="mt-6 pt-4 border-t border-slate-100">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-slate-600 font-medium">Total Price</span>
